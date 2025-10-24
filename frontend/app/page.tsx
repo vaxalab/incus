@@ -5,14 +5,25 @@ export default function Home() {
         <h1 className="text-5xl sm:text-7xl font-bold text-center sm:text-left">
           Incus
         </h1>
-        <h3 className="text-xl sm:text-3xl font-semibold text-center sm:text-left">Turning bold ideas into scalable platforms.</h3>
+        <h3 className="text-xl sm:text-3xl font-semibold text-center sm:text-left">
+          Record Label and Sample Packs.
+        </h3>
         <p>Incus Audio Website</p>
         <p>Website under construction.</p>
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-       <p>
-        © 2025 Incus | Built by VäxaLab
-       </p>
+        <p>
+          © 2025 Incus Audio | A{" "}
+          <a
+            href="https://www.vaxalab.co.uk"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:no-underline"
+          >
+            VäxaLab
+          </a>{" "}
+          production
+        </p>
       </footer>
     </div>
   );
