@@ -5,8 +5,8 @@ const Hero: React.FC = () => {
     <section 
       className="hero"
       style={{
-        backgroundColor: '#092026',
-        paddingBottom: '750px'
+        backgroundColor: '#242a2c',
+        paddingBottom: '650px'
       }}
     >
       {/* Hero content placeholder */}

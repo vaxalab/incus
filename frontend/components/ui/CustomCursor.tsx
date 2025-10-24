@@ -15,7 +15,7 @@ export default function CustomCursor() {
       gsap.to(cursor, {
         x: e.clientX,
         y: e.clientY,
-        duration: 0.35,
+        duration: 0.3,
         ease: "power2.out",
         overwrite: "auto",
       });
@@ -62,8 +62,6 @@ export default function CustomCursor() {
 
     return () => {
       window.removeEventListener("mousemove", move);
-      document.removeEventListener("mouseenter", handleDocumentEnter);
-      document.removeEventListener("mouseleave", handleDocumentLeave);
       // Clean up event listeners on links
       links.forEach((el) => {
         el.removeEventListener("mouseenter", () => {});
@@ -80,7 +78,7 @@ export default function CustomCursor() {
       className="fixed top-0 left-0 pointer-events-none z-[9999]"
       style={{ mixBlendMode: "difference" }}
     >
-      <div className="relative w-8 h-8 border border-white rounded-full flex items-center justify-center">
+      <div className="relative w-8 h-8 border-[1px] border-white rounded-full flex items-center justify-center">
         <div className="w-1.5 h-1.5 bg-white rounded-full" />
       </div>
     </div>

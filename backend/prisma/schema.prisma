@@ -1,15 +1,516 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Users
+model User {
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  username             String    @unique
+  fullName             String
+  password             String // Hashed with bcrypt (includes salt)
+  emailConfirmed       DateTime? // When email was confirmed (null = unconfirmed)
+  passwordResetToken   String? // Token for password reset (hashed)
+  passwordResetExpires DateTime? // When reset token expires
+  role                 UserRole  @default(CUSTOMER)
+  isActive             Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relations
+  addresses        Address[]
+  artists          Artist[]
+  orders           Order[]
+  posts            Post[]
+  digitalDownloads DigitalDownload[]
+
+  @@index([id])
+  @@index([email])
+  @@index([username])
+  @@index([emailConfirmed])
+  @@index([passwordResetToken])
+  @@index([passwordResetExpires])
+  @@index([createdAt])
+  @@map("users")
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+// Addresses
+model Address {
+  id           String      @id @default(uuid())
+  label        String? // e.g., "Home", "Work", "Billing"
+  firstName    String
+  lastName     String
+  company      String? // Optional company name
+  addressLine1 String // Street address, house number
+  addressLine2 String? // Apartment, suite, unit, building, floor, etc.
+  city         String
+  county       String? // UK: County, US: State, Others: Province/Region
+  postcode     String // UK: Postcode, US: ZIP code, Others: Postal code
+  country      String      @default("GB") // ISO country code (GB, US, etc.)
+  phone        String? // Contact phone for delivery
+  isDefault    Boolean     @default(false) // User's default address
+  type         AddressType @default(BOTH) // Shipping, billing, or both
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Relations
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Orders using this address
+  ordersShipping Order[] @relation("ShippingAddress")
+  ordersBilling  Order[] @relation("BillingAddress")
+
+  @@index([id])
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@index([country])
+  @@map("addresses")
+}
+
+enum AddressType {
+  SHIPPING
+  BILLING
+  BOTH
+}
+
+// Artists
+model Artist {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  slug            String   @unique
+  bio             String?
+  website         String?
+  instagram       String?
+  twitter         String?
+  spotify         String?
+  appleMusicUrl   String?
+  youtubeUrl      String?
+  youtubeMusicUrl String?
+  soundcloud      String?
+  isActive        Boolean  @default(true)
+  addedById       String // User who added the artist
+  addedBy         User     @relation(fields: [addedById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  releases Release[]
+  images   Image[]
+
+  @@index([id])
+  @@index([name])
+  @@index([slug])
+  @@index([name, slug])
+  @@map("artists")
+}
+
+// Release Types
+enum ReleaseType {
+  ALBUM
+  EP
+  SINGLE
+}
+
+// Releases
+model Release {
+  id               String      @id @default(uuid())
+  title            String
+  slug             String      @unique
+  displayArtist    String // For featuring artists, etc.
+  releaseDate      DateTime?
+  type             ReleaseType
+  description      String?
+  spotifyUrl       String?
+  addToPlaylistUrl String? // Spotify playlist link
+  appleMusicUrl    String?
+  youtubeUrl       String?
+  youtubeMusicUrl  String?
+  soundcloudUrl    String?
+  isActive         Boolean     @default(true)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  // Relations
+  artistId String
+  artist   Artist    @relation(fields: [artistId], references: [id])
+  images   Image[]
+  tracks   Track[]
+  products Product[] // Release products
+
+  @@index([id])
+  @@index([title])
+  @@index([slug])
+  @@index([title, slug])
+  @@index([artistId])
+  @@index([createdAt])
+  @@map("releases")
+}
+
+// Tracks
+model Track {
+  id          String   @id @default(uuid())
+  title       String
+  trackNumber Int
+  duration    Int? // Duration in seconds
+  audioUrl    String? // For streaming audio
+  playable    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  releaseId String
+  release   Release @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+
+  @@index([id])
+  @@index([title])
+  @@index([releaseId])
+  @@index([createdAt])
+  @@map("tracks")
+}
+
+// Product Types
+enum ProductType {
+  RELEASE
+  SAMPLE_PACK
+  MERCH
+}
+
+// Products
+model Product {
+  id            String      @id @default(uuid())
+  name          String
+  slug          String      @unique
+  description   String?
+  price         Decimal     @db.Decimal(10, 2)
+  isDigital     Boolean     @default(false)
+  downloadUrl   String? // For digital products
+  stockQuantity Int? // For physical products
+  isActive      Boolean     @default(true)
+  isFeatured    Boolean     @default(false)
+  type          ProductType
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  releaseId        String? // Optional - only for release products
+  release          Release?          @relation(fields: [releaseId], references: [id])
+  images           Image[]
+  categories       ProductCategory[]
+  orderItems       OrderItem[]
+  digitalDownloads DigitalDownload[]
+
+  @@index([id])
+  @@index([name])
+  @@index([slug])
+  @@index([type])
+  @@index([isFeatured])
+  @@index([isActive])
+  @@index([type, isActive])
+  @@index([isFeatured, isActive])
+  @@index([createdAt])
+  @@map("products")
+}
+
+// Product Categories
+model Category {
+  id        String       @id @default(uuid())
+  name      String       @unique
+  slug      String       @unique
+  type      CategoryType
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // Relations
+  products ProductCategory[]
+
+  @@index([id])
+  @@index([type])
+  @@index([slug])
+  @@index([type, slug])
+  @@map("categories")
+}
+
+enum CategoryType {
+  CLOTHING_TYPE // t-shirts, hoodies
+  SIZE // S, M, L, XL
+  COLOR // black, white, red
+  MUSIC_GENRE // techno, house, ambient
+}
+
+// Many-to-many relationship between Products and Categories
+model ProductCategory {
+  id         String   @id @default(uuid())
+  productId  String
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  // Relations
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, categoryId])
+  @@index([id])
+  @@index([categoryId])
+  @@index([productId])
+  @@index([categoryId, productId])
+  @@map("product_categories")
+}
+
+// Images
+model Image {
+  id       String  @id @default(uuid())
+  filename String
+  alt      String?
+  width    Int?
+  height   Int?
+  filesize Int?
+  mimeType String?
+
+  // Relations
+  releases Release[]
+  artists  Artist[]
+  products Product[]
+  postId   String?
+  post     Post?     @relation(fields: [postId], references: [id])
+
+  @@index([id])
+  @@index([filename])
+  @@index([mimeType])
+  @@index([postId])
+  @@index([filesize])
+  @@map("images")
+}
+
+// Orders
+model Order {
+  id              String      @id @default(uuid())
+  orderNumber     String      @unique
+  status          OrderStatus @default(PENDING)
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  shippingCost    Decimal     @default(0) @db.Decimal(10, 2)
+  tax             Decimal     @default(0) @db.Decimal(10, 2)
+  paymentMethod   String?
+  paymentIntentId String?
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  userId    String?
+  user      User?           @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+  discounts OrderDiscount[]
+
+  // Address Relations
+  shippingAddressId String?
+  shippingAddress   Address? @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  billingAddressId  String?
+  billingAddress    Address? @relation("BillingAddress", fields: [billingAddressId], references: [id])
+
+  @@index([id])
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+// Order Items
+model OrderItem {
+  id       String  @id @default(uuid())
+  quantity Int
+  price    Decimal @db.Decimal(10, 2)
+
+  // Relations
+  orderId          String
+  order            Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId        String
+  product          Product           @relation(fields: [productId], references: [id])
+  digitalDownloads DigitalDownload[]
+
+  @@index([id])
+  @@index([orderId])
+  @@index([productId])
+  @@index([orderId, productId])
+  @@map("orderItems")
+}
+
+// Blog Posts
+model Post {
+  id          String    @id @default(uuid())
+  title       String
+  slug        String    @unique
+  excerpt     String? // Short description for previews
+  content     String // Full blog post content
+  isPublished Boolean   @default(false)
+  isFeatured  Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  authorId String?
+  author   User?     @relation(fields: [authorId], references: [id])
+  tags     PostTag[]
+  images   Image[]
+
+  @@index([id])
+  @@index([slug])
+  @@index([isPublished])
+  @@index([isFeatured])
+  @@index([authorId])
+  @@index([publishedAt])
+  @@index([createdAt])
+  @@index([isPublished, isFeatured])
+  @@index([isPublished, publishedAt])
+  @@map("posts")
+}
+
+// Post Tags
+model Tag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  color     String? // For UI styling (hex color)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  posts PostTag[]
+
+  @@index([id])
+  @@index([name])
+  @@index([slug])
+  @@index([createdAt])
+  @@map("tags")
+}
+
+// Many-to-many relationship between Posts and Tags
+model PostTag {
+  id        String   @id @default(uuid())
+  postId    String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId])
+  @@index([id])
+  @@index([postId])
+  @@index([tagId])
+  @@index([postId, tagId])
+  @@map("post_tags")
+}
+
+// Discount Codes
+model DiscountCode {
+  id              String       @id @default(uuid())
+  code            String       @unique
+  description     String?
+  type            DiscountType @default(PERCENTAGE)
+  discountPercent Decimal?     @db.Decimal(5, 2) // e.g., 15.00 for 15%
+  discountAmount  Decimal?     @db.Decimal(10, 2) // Fixed amount discount
+  minimumAmount   Decimal?     @db.Decimal(10, 2) // Minimum order amount required
+  usageLimit      Int? // Maximum number of uses
+  timesUsed       Int          @default(0)
+  isActive        Boolean      @default(true)
+  validFrom       DateTime     @default(now())
+  validTo         DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relations
+  orders OrderDiscount[]
+
+  @@index([id])
+  @@index([code])
+  @@index([isActive])
+  @@index([validFrom])
+  @@index([validTo])
+  @@index([isActive, validFrom, validTo])
+  @@index([createdAt])
+  @@map("discount_codes")
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+// Many-to-many relationship between Orders and Discount Codes
+model OrderDiscount {
+  id             String   @id @default(uuid())
+  orderId        String
+  discountCodeId String
+  discountAmount Decimal  @db.Decimal(10, 2) // Actual discount applied
+  createdAt      DateTime @default(now())
+
+  // Relations
+  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  discountCode DiscountCode @relation(fields: [discountCodeId], references: [id])
+
+  @@unique([orderId, discountCodeId])
+  @@index([id])
+  @@index([orderId])
+  @@index([discountCodeId])
+  @@index([createdAt])
+  @@map("order_discounts")
+}
+
+// Digital Downloads with Expiring Links
+model DigitalDownload {
+  id            String   @id @default(uuid())
+  downloadToken String   @unique // Unique token for secure downloads
+  downloadUrl   String // Secure download URL
+  fileName      String
+  fileSize      Int? // File size in bytes
+  mimeType      String?
+  maxDownloads  Int      @default(3) // Maximum number of downloads allowed
+  downloadCount Int      @default(0) // Current download count
+  expiresAt     DateTime // When the download link expires
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  orderItemId String? // Link to specific order item
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id])
+  productId   String // The digital product being downloaded
+  product     Product    @relation(fields: [productId], references: [id])
+  userId      String? // Optional user (for guest purchases)
+  user        User?      @relation(fields: [userId], references: [id])
+
+  @@index([id])
+  @@index([downloadToken])
+  @@index([orderItemId])
+  @@index([productId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@index([isActive, expiresAt])
+  @@index([createdAt])
+  @@map("digital_downloads")
 }

@@ -67,7 +67,7 @@ services:
 
   # Prisma Studio (Database GUI)
   prisma-studio:
-    image: node:18-alpine
+    image: node:20-alpine
     container_name: incus_prisma_studio
     restart: unless-stopped
     ports:
@@ -78,16 +78,119 @@ services:
       - ./backend:/app
     working_dir: /app
     command: >
-      sh -c "npm install -g prisma &&
-             npx prisma generate &&
-             npx prisma studio --hostname 0.0.0.0 --port 5555"
+      sh -c "rm -f package-lock.json &&
+             yarn global add prisma@latest &&
+             yarn prisma generate &&
+             yarn prisma studio --hostname 0.0.0.0 --port 5555"
     depends_on:
       - postgres
     networks:
       - incus_network
 
+  # File Storage (MinIO - S3 Compatible)
+  minio:
+    image: minio/minio:latest
+    container_name: incus_minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000" # API
+      - "9001:9001" # Web Console
+    environment:
+      MINIO_ROOT_USER: incus_admin
+      MINIO_ROOT_PASSWORD: incus_password123
+      MINIO_SERVER_URL: http://localhost:9000
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+      MINIO_REGION: eu-west-2 # London region
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - incus_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # MinIO Client for bucket management
+  minio-client:
+    image: minio/mc:latest
+    container_name: incus_minio_client
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO to be ready...';
+      sleep 10;
+      /usr/bin/mc alias set minio http://minio:9000 incus_admin incus_password123;
+      echo 'Creating buckets...';
+      /usr/bin/mc mb minio/incus-images --ignore-existing;
+      /usr/bin/mc mb minio/incus-audio --ignore-existing;
+      /usr/bin/mc mb minio/incus-downloads --ignore-existing;
+      echo 'Setting bucket policies...';
+      /usr/bin/mc anonymous set public minio/incus-images;
+      /usr/bin/mc anonymous set public minio/incus-audio;
+      /usr/bin/mc anonymous set none minio/incus-downloads;
+      echo 'Creating folder structure...';
+      echo '' | /usr/bin/mc pipe minio/incus-images/artists/.keep;
+      echo '' | /usr/bin/mc pipe minio/incus-images/releases/.keep;
+      echo '' | /usr/bin/mc pipe minio/incus-images/products/.keep;
+      echo '' | /usr/bin/mc pipe minio/incus-audio/tracks/.keep;
+      echo '' | /usr/bin/mc pipe minio/incus-downloads/releases/.keep;
+      echo '' | /usr/bin/mc pipe minio/incus-downloads/sample-packs/.keep;
+      echo 'MinIO setup complete!';
+      exit 0;
+      "
+    networks:
+      - incus_network
+
+  # Redis Cache/Session Store
+  redis:
+    image: redis:7-alpine
+    container_name: incus_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass incus_redis_password
+    volumes:
+      - redis_data:/data
+    networks:
+      - incus_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  # Email Testing (MailHog)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: incus_mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP server
+      - "8025:8025" # Web interface
+    networks:
+      - incus_network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8025",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   postgres_data:
+  minio_data:
+  redis_data:
 
 networks:
   incus_network:
