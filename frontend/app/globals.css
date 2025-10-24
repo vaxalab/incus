@@ -59,25 +59,25 @@ html {
   --radius: 0.625rem;
 
   /* Custom Dark Color Palette */
-  --background: oklch(0.082 0 0); /* #111111 */
+  --background: oklch(0.13 0 0); /* #111111 */
   --card: oklch(0.133 0 0); /* #1C1C1C */
   --shadow: oklch(0.046 0 0); /* #0A0A0A */
-  --foreground: oklch(0.92 0.02 86.17); /* #F4F3F1 */
+  --foreground: oklch(93.163% 0.01268 86.803); /* #F4F3F1 */
   --white: oklch(100% 0.00011 271.152); /* #F4F3F1 */
   --primary: oklch(0.777 0.127 166.11); /* #57CFAF */
   --secondary: oklch(0.618 0.199 357.99); /* #CF5777 */
   --delete: oklch(0.439 0.175 16.32); /* #A41029 */
 
   /* Derived colors from your palette */
-  --card-foreground: oklch(0.92 0.02 86.17);
+  --card-foreground: oklch(93.163% 0.01268 86.803);
   --popover: oklch(0.133 0 0);
-  --popover-foreground: oklch(0.92 0.02 86.17);
-  --primary-foreground: oklch(0.082 0 0);
-  --secondary-foreground: oklch(0.92 0.02 86.17);
+  --popover-foreground: oklch(93.163% 0.01268 86.803);
+  --primary-foreground: oklch(0.13 0 0);
+  --secondary-foreground: oklch(93.163% 0.01268 86.803);
   --muted: oklch(0.2 0 0);
   --muted-foreground: oklch(0.7 0.004 85.87);
   --accent: oklch(0.133 0 0);
-  --accent-foreground: oklch(0.92 0.02 86.17);
+  --accent-foreground: oklch(93.163% 0.01268 86.803);
   --destructive: oklch(0.439 0.175 16.32);
   --border: oklch(0.25 0 0);
   --input: oklch(0.2 0 0);
@@ -92,11 +92,11 @@ html {
 
   /* Sidebar colors */
   --sidebar: oklch(0.133 0 0);
-  --sidebar-foreground: oklch(0.92 0.02 86.17);
+  --sidebar-foreground: oklch(93.163% 0.01268 86.803);
   --sidebar-primary: oklch(0.777 0.127 166.11);
-  --sidebar-primary-foreground: oklch(0.082 0 0);
+  --sidebar-primary-foreground: oklch(0.13 0 0);
   --sidebar-accent: oklch(0.2 0 0);
-  --sidebar-accent-foreground: oklch(0.92 0.02 86.17);
+  --sidebar-accent-foreground: oklch(93.163% 0.01268 86.803);
   --sidebar-border: oklch(0.25 0 0);
   --sidebar-ring: oklch(0.777 0.127 166.11);
 }
@@ -111,6 +111,17 @@ html {
     color-scheme: dark;
     position: relative;
     cursor: none;
+  }
+
+  /* Custom text selection color */
+  ::selection {
+    background-color: var(--primary);
+    color: var(--background);
+  }
+
+  ::-moz-selection {
+    background-color: var(--primary);
+    color: var(--background);
   }
 
   body::before {

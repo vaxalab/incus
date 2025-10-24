@@ -9,7 +9,7 @@ export default function Container({ children, className = '' }: ContainerProps) 
   return (
     <div 
       className={`
-        w-[90%] 
+        w-[85%] 
         max-w-[1500px] 
         mx-auto 
         min-h-screen 

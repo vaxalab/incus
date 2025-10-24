@@ -15,14 +15,14 @@ export default function CustomCursor() {
       gsap.to(cursor, {
         x: e.clientX,
         y: e.clientY,
-        duration: 0.3,
+        duration: 0.35,
         ease: "power2.out",
         overwrite: "auto",
       });
     };
 
     window.addEventListener("mousemove", move);
-    
+
     // Hover states
     const links = document.querySelectorAll("a, button, [data-hover]");
     const cursorInner = cursor.querySelector("div");
