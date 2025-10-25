@@ -24,17 +24,40 @@ CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "username" TEXT NOT NULL,
-    "fullName" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "emailConfirmed" TIMESTAMP(3),
-    "passwordResetToken" TEXT,
-    "passwordResetExpires" TIMESTAMP(3),
+    "firstName" TEXT,
+    "lastName" TEXT,
     "role" "UserRole" NOT NULL DEFAULT 'CUSTOMER',
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "emailConfirmed" BOOLEAN NOT NULL DEFAULT false,
+    "lastLogin" TIMESTAMP(3),
+    "passwordResetToken" TEXT,
+    "passwordResetExpires" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "sessions" (
+    "id" TEXT NOT NULL,
+    "sid" TEXT NOT NULL,
+    "userId" TEXT,
+    "ipAddress" TEXT,
+    "userAgent" TEXT,
+    "country" TEXT,
+    "device" TEXT,
+    "browser" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "lastActivity" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "loginAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "logoutAt" TIMESTAMP(3),
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "sessions_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -329,25 +352,40 @@ CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 
 -- CreateIndex
-CREATE INDEX "users_id_idx" ON "users"("id");
-
--- CreateIndex
 CREATE INDEX "users_email_idx" ON "users"("email");
 
 -- CreateIndex
 CREATE INDEX "users_username_idx" ON "users"("username");
 
 -- CreateIndex
-CREATE INDEX "users_emailConfirmed_idx" ON "users"("emailConfirmed");
+CREATE INDEX "users_role_idx" ON "users"("role");
 
 -- CreateIndex
-CREATE INDEX "users_passwordResetToken_idx" ON "users"("passwordResetToken");
+CREATE INDEX "users_isActive_idx" ON "users"("isActive");
 
 -- CreateIndex
-CREATE INDEX "users_passwordResetExpires_idx" ON "users"("passwordResetExpires");
+CREATE UNIQUE INDEX "sessions_sid_key" ON "sessions"("sid");
 
 -- CreateIndex
-CREATE INDEX "users_createdAt_idx" ON "users"("createdAt");
+CREATE INDEX "sessions_sid_idx" ON "sessions"("sid");
+
+-- CreateIndex
+CREATE INDEX "sessions_userId_idx" ON "sessions"("userId");
+
+-- CreateIndex
+CREATE INDEX "sessions_expiresAt_idx" ON "sessions"("expiresAt");
+
+-- CreateIndex
+CREATE INDEX "sessions_isActive_idx" ON "sessions"("isActive");
+
+-- CreateIndex
+CREATE INDEX "sessions_lastActivity_idx" ON "sessions"("lastActivity");
+
+-- CreateIndex
+CREATE INDEX "sessions_userId_isActive_idx" ON "sessions"("userId", "isActive");
+
+-- CreateIndex
+CREATE INDEX "sessions_loginAt_idx" ON "sessions"("loginAt");
 
 -- CreateIndex
 CREATE INDEX "addresses_id_idx" ON "addresses"("id");
@@ -660,6 +698,9 @@ CREATE INDEX "_ImageToRelease_B_index" ON "_ImageToRelease"("B");
 
 -- CreateIndex
 CREATE INDEX "_ImageToProduct_B_index" ON "_ImageToProduct"("B");
+
+-- AddForeignKey
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "addresses" ADD CONSTRAINT "addresses_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

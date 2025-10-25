@@ -4,7 +4,8 @@
 
 import type { Request } from 'express';
 import { SessionUtil } from './session.util';
-import type { UserRole } from '../../generated/prisma';
+import type { UserRole } from '@prisma/client';
+import type { DatabaseService } from '../database/database.service';
 
 export interface SessionMetadata {
   ipAddress?: string;
@@ -118,7 +119,7 @@ export class SessionTrackingUtil {
    */
   static async updateSessionActivity(
     sessionId: string,
-    databaseService: any, // We'll properly type this when we integrate
+    databaseService: DatabaseService,
   ): Promise<void> {
     try {
       await databaseService.session.update({
@@ -141,7 +142,7 @@ export class SessionTrackingUtil {
    */
   static async markSessionLoggedOut(
     sessionId: string,
-    databaseService: any,
+    databaseService: DatabaseService,
   ): Promise<void> {
     try {
       await databaseService.session.update({
@@ -161,7 +162,9 @@ export class SessionTrackingUtil {
    * Clean up expired sessions from database
    * @param databaseService - Database service instance
    */
-  static async cleanupExpiredSessions(databaseService: any): Promise<void> {
+  static async cleanupExpiredSessions(
+    databaseService: DatabaseService,
+  ): Promise<void> {
     try {
       const result = await databaseService.session.updateMany({
         where: {

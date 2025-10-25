@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+
 import {
   Injectable,
   OnModuleInit,
   OnModuleDestroy,
   Logger,
 } from '@nestjs/common';
-import { PrismaClient } from '../../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class DatabaseService
@@ -35,7 +38,7 @@ export class DatabaseService
   }
 
   // Helper method for transactions
-  async executeTransaction<T>(
+  executeTransaction<T>(
     callback: (
       prisma: Omit<
         PrismaClient,

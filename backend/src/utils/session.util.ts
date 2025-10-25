@@ -2,7 +2,7 @@
  * Session utility functions for managing session configuration
  */
 
-import type { UserRole } from '../../generated/prisma';
+import type { UserRole } from '@prisma/client';
 
 export class SessionUtil {
   /**

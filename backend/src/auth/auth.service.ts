@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 import {
   Injectable,
   UnauthorizedException,
@@ -8,13 +14,12 @@ import { randomBytes } from 'crypto';
 import { DatabaseService } from '../database/database.service';
 import { EmailService } from '../email/email.service';
 import { PasswordValidationUtil } from '../utils/password-validation.util';
-import {
-  LoginDto,
-  RegisterDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
-} from './dto/auth.dto';
-import type { User } from '../../generated/prisma';
+import { LoginDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
+import type { PrismaClient } from '@prisma/client';
+
+type User = NonNullable<
+  Awaited<ReturnType<PrismaClient['user']['findUnique']>>
+>;
 
 @Injectable()
 export class AuthService {
@@ -23,12 +28,11 @@ export class AuthService {
     private emailService: EmailService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<Omit<User, 'password'>> {
-    const { email, username, password } = registerDto;
-
-    // Validate password strength
-    PasswordValidationUtil.validatePasswordStrength(password);
-
+  async registerUser(
+    email: string,
+    username: string,
+    password: string,
+  ): Promise<Omit<User, 'password'>> {
     // Check if user already exists
     const existingUser = await this.databaseService.user.findFirst({
       where: {
@@ -46,7 +50,6 @@ export class AuthService {
 
     // Hash password
     const saltRounds = 10;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // Generate email confirmation token
@@ -58,7 +61,6 @@ export class AuthService {
       data: {
         email,
         username,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         password: hashedPassword,
         role: 'CUSTOMER',
         isActive: true,
@@ -106,7 +108,6 @@ export class AuthService {
     }
 
     // Verify password
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
@@ -184,14 +185,12 @@ export class AuthService {
 
     // Hash new password
     const saltRounds = 10;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
     // Update password and clear reset token
     await this.databaseService.user.update({
       where: { id: user.id },
       data: {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         password: hashedPassword,
         passwordResetToken: null,
         passwordResetExpires: null,

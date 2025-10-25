@@ -1,4 +1,7 @@
-import { UserRole } from '../../../generated/prisma';
+enum UserRole {
+  CUSTOMER = 'CUSTOMER',
+  ADMIN = 'ADMIN',
+}
 
 export class CreateUserDto {
   email: string;

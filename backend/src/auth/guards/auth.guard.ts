@@ -18,7 +18,6 @@ export class AuthGuard implements CanActivate {
       .getRequest<Request & { user?: any }>();
 
     // Check if user ID exists in session
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const userId = request.session?.userId;
 
     if (!userId) {
@@ -26,7 +25,6 @@ export class AuthGuard implements CanActivate {
     }
 
     // Validate user still exists and is active
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const user = await this.authService.validateUser(userId);
 
     if (!user) {

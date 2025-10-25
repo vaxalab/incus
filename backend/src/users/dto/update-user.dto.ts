@@ -1,7 +1,12 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateUserDto } from './create-user.dto';
+enum UserRole {
+  CUSTOMER = 'CUSTOMER',
+  ADMIN = 'ADMIN',
+}
 
-export class UpdateUserDto extends PartialType(CreateUserDto) {
-  // Exclude password from updates - use separate password change endpoint
-  password?: never;
+export class UpdateUserDto {
+  email?: string;
+  username?: string;
+  fullName?: string;
+  role?: UserRole;
+  isActive?: boolean;
 }

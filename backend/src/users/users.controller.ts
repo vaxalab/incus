@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 import {
   Controller,
   Get,
@@ -7,11 +9,15 @@ import {
   Param,
   Delete,
   Query,
-  ParseIntPipe,
-  DefaultValuePipe,
   UseGuards,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
-import { User } from '../../generated/prisma';
+import type { PrismaClient } from '@prisma/client';
+
+type User = NonNullable<
+  Awaited<ReturnType<PrismaClient['user']['findUnique']>>
+>;
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';

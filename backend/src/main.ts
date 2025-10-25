@@ -2,20 +2,19 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import session from 'express-session';
-import { createClient } from 'redis';
 import { RedisStore } from 'connect-redis';
 import { AppModule } from './app.module';
+import { CacheService } from './cache/cache.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Redis client for session store
-  const redisClient = createClient({
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
-    password: process.env.REDIS_PASSWORD || 'incus_redis_password',
-  });
+  // Initialize the app (triggers onModuleInit)
+  await app.init();
 
-  await redisClient.connect();
+  // Get Redis client from cache service for session store
+  const cacheService = app.get(CacheService);
+  const redisClient = cacheService.getClient();
 
   // Session configuration
   app.use(

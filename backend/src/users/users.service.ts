@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 import {
   Injectable,
   NotFoundException,
@@ -35,7 +41,6 @@ export class UsersService {
     }
 
     // Hash password
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const hashedPassword = (await bcrypt.hash(
       createUserDto.password,
       12,
@@ -147,13 +152,13 @@ export class UsersService {
     return user;
   }
 
-  async findByEmail(email: string) {
+  findByEmail(email: string) {
     return this.databaseService.user.findUnique({
       where: { email },
     });
   }
 
-  async findByUsername(username: string) {
+  findByUsername(username: string) {
     return this.databaseService.user.findUnique({
       where: { username },
     });
@@ -230,7 +235,6 @@ export class UsersService {
     }
 
     // Verify current password
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
     const isCurrentPasswordValid = await bcrypt.compare(
       currentPassword,
       user.password,
@@ -240,13 +244,11 @@ export class UsersService {
     }
 
     // Hash new password
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
     const hashedNewPassword = await bcrypt.hash(newPassword, 12);
 
     await this.databaseService.user.update({
       where: { id },
       data: {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         password: hashedNewPassword,
         passwordResetToken: null,
         passwordResetExpires: null,
@@ -279,13 +281,11 @@ export class UsersService {
     }
 
     // Hash new password
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
     const hashedNewPassword = await bcrypt.hash(newPassword, 12);
 
     await this.databaseService.user.update({
       where: { id },
       data: {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         password: hashedNewPassword,
         // Clear any existing password reset tokens
         passwordResetToken: null,

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
-import { UserRole } from '../../../generated/prisma';
+import { UserRole } from '@prisma/client';
 import '../../types/session.types';
 
 @Injectable()

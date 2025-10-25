@@ -11,13 +11,11 @@ export class OptionalAuthGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request & { user?: any }>();
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const userId = request.session?.userId;
 
     if (userId) {
       // Try to attach user if session exists
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const user = await this.authService.validateUser(userId);
         if (user) {
           request.user = user;

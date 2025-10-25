@@ -32,7 +32,6 @@ export class EmailService {
 
   async sendEmail(emailData: EmailTemplate): Promise<boolean> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const info = await this.transporter.sendMail({
         from:
           process.env.SMTP_FROM || '"Incus Records" <noreply@incusrecords.com>',
@@ -43,7 +42,6 @@ export class EmailService {
       });
 
       this.logger.log(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         `Email sent successfully to ${emailData.to}: ${info.messageId}`,
       );
       return true;
