@@ -1,7 +1,4 @@
-enum UserRole {
-  CUSTOMER = 'CUSTOMER',
-  ADMIN = 'ADMIN',
-}
+import { UserRole } from '@prisma/client';
 
 export class CreateUserDto {
   email: string;

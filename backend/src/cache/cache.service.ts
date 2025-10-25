@@ -166,7 +166,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       }
 
       this.logger.debug(`Cache HIT: ${cacheKey}`);
-      return JSON.parse(value) as T;
+      return JSON.parse(value as string) as T;
     } catch (error) {
       this.logger.error(`Failed to get cache key ${key}:`, error);
       return null;
@@ -233,7 +233,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
           return null;
         }
         this.logger.debug(`Cache HIT: ${cacheKeys[index]}`);
-        return JSON.parse(value) as T;
+        return JSON.parse(value as string) as T;
       });
     } catch (error) {
       this.logger.error('Failed to get multiple cache keys:', error);

@@ -7,11 +7,9 @@ declare module 'express-session' {
   }
 }
 
-// Express Request augmentation - namespace syntax is required for this pattern
-declare global {
-  namespace Express {
-    interface Request {
-      user?: Omit<User, 'password'>;
-    }
+// Express Request augmentation
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: Omit<User, 'password'>;
   }
 }
