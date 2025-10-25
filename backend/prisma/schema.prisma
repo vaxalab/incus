@@ -13,31 +13,59 @@ model User {
   id                   String    @id @default(uuid())
   email                String    @unique
   username             String    @unique
-  fullName             String
-  password             String // Hashed with bcrypt (includes salt)
-  emailConfirmed       DateTime? // When email was confirmed (null = unconfirmed)
-  passwordResetToken   String? // Token for password reset (hashed)
-  passwordResetExpires DateTime? // When reset token expires
+  password             String
+  firstName            String?
+  lastName             String?
   role                 UserRole  @default(CUSTOMER)
   isActive             Boolean   @default(true)
+  emailConfirmed       Boolean   @default(false)
+  lastLogin            DateTime?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  // Relations
-  addresses        Address[]
-  artists          Artist[]
+  // Relationships
   orders           Order[]
   posts            Post[]
+  sessions         Session[]
+  addresses        Address[]
+  artistsAdded     Artist[]
   digitalDownloads DigitalDownload[]
 
-  @@index([id])
   @@index([email])
   @@index([username])
-  @@index([emailConfirmed])
-  @@index([passwordResetToken])
-  @@index([passwordResetExpires])
-  @@index([createdAt])
+  @@index([role])
+  @@index([isActive])
   @@map("users")
+}
+
+model Session {
+  id           String    @id @default(uuid())
+  sid          String    @unique
+  userId       String?
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress    String?
+  userAgent    String?
+  country      String? // Derived from IP for analytics
+  device       String? // mobile, desktop, tablet
+  browser      String? // chrome, firefox, safari
+  isActive     Boolean   @default(true)
+  lastActivity DateTime  @default(now())
+  loginAt      DateTime  @default(now())
+  logoutAt     DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([sid])
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@index([lastActivity])
+  @@index([userId, isActive])
+  @@index([loginAt])
+  @@map("sessions")
 }
 
 enum UserRole {

@@ -76,10 +76,10 @@ services:
       - DATABASE_URL=postgresql://incus_user:incus_password@postgres:5432/incus_dev
     volumes:
       - ./backend:/app
+      - /app/node_modules
     working_dir: /app
     command: >
-      sh -c "rm -f package-lock.json &&
-             yarn global add prisma@latest &&
+      sh -c "yarn install &&
              yarn prisma generate &&
              yarn prisma studio --hostname 0.0.0.0 --port 5555"
     depends_on:
