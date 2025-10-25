@@ -20,21 +20,34 @@ export class EmailService {
   private createTransporter() {
     // MailHog configuration for development
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'localhost',
-      port: parseInt(process.env.SMTP_PORT || '1025'),
-      secure: false, // true for 465, false for other ports
-      ignoreTLS: true, // MailHog doesn't use TLS
-      auth: false, // MailHog doesn't require authentication
+      host: process.env.MAIL_HOST || 'localhost',
+      port: parseInt(process.env.MAIL_PORT || '1025'),
+      secure: process.env.MAIL_SECURE === 'true', // true for 465, false for other ports
+      ignoreTLS: process.env.MAIL_SECURE !== 'true', // MailHog doesn't use TLS
+      auth:
+        process.env.MAIL_USER && process.env.MAIL_PASS
+          ? {
+              user: process.env.MAIL_USER,
+              pass: process.env.MAIL_PASS,
+            }
+          : false,
     } as nodemailer.TransportOptions);
 
-    this.logger.log('Email transporter configured for MailHog');
+    this.logger.log(
+      `Email transporter configured for ${process.env.MAIL_HOST || 'localhost'}:${process.env.MAIL_PORT || '1025'}`,
+    );
   }
 
   async sendEmail(emailData: EmailTemplate): Promise<boolean> {
     try {
+      this.logger.debug(`Attempting to send email to ${emailData.to}`);
+      this.logger.debug(
+        `SMTP Config: ${process.env.MAIL_HOST}:${process.env.MAIL_PORT}`,
+      );
+
       const info = await this.transporter.sendMail({
         from:
-          process.env.SMTP_FROM || '"Incus Records" <noreply@incusrecords.com>',
+          process.env.MAIL_FROM || '"Incus Records" <noreply@incusrecords.com>',
         to: emailData.to,
         subject: emailData.subject,
         html: emailData.html,
@@ -47,13 +60,16 @@ export class EmailService {
       return true;
     } catch (error) {
       this.logger.error(`Failed to send email to ${emailData.to}:`, error);
+      this.logger.error(
+        `SMTP Config used: ${process.env.MAIL_HOST}:${process.env.MAIL_PORT}`,
+      );
       return false;
     }
   }
 
   async sendEmailConfirmation(
     email: string,
-    username: string,
+    displayName: string,
     confirmationToken: string,
   ): Promise<boolean> {
     const confirmationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirm-email?token=${confirmationToken}`;
@@ -90,7 +106,7 @@ export class EmailService {
               <h1>Welcome to Incus Records</h1>
             </div>
             <div class="content">
-              <h2>Hello ${username}!</h2>
+              <h2>Hello ${displayName}!</h2>
               <p>Thank you for joining Incus Records. To complete your registration, please confirm your email address by clicking the button below:</p>
               
               <div style="text-align: center;">
@@ -117,7 +133,7 @@ export class EmailService {
       text: `
         Welcome to Incus Records!
         
-        Hello ${username},
+        Hello ${displayName},
         
         Thank you for joining Incus Records. To complete your registration, please confirm your email address by visiting this link:
         
@@ -138,7 +154,7 @@ export class EmailService {
 
   async sendPasswordResetEmail(
     email: string,
-    username: string,
+    displayName: string,
     resetToken: string,
   ): Promise<boolean> {
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
@@ -176,7 +192,7 @@ export class EmailService {
               <h1>Password Reset Request</h1>
             </div>
             <div class="content">
-              <h2>Hello ${username}</h2>
+              <h2>Hello ${displayName}</h2>
               <p>We received a request to reset your password for your Incus Records account.</p>
               
               <div class="warning">
@@ -208,7 +224,7 @@ export class EmailService {
       text: `
         Password Reset Request - Incus Records
         
-        Hello ${username},
+        Hello ${displayName},
         
         We received a request to reset your password for your Incus Records account.
         
@@ -229,7 +245,7 @@ export class EmailService {
     return this.sendEmail(emailData);
   }
 
-  async sendWelcomeEmail(email: string, username: string): Promise<boolean> {
+  async sendWelcomeEmail(email: string, displayName: string): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: email,
       subject: 'Welcome to Incus Records - Account Activated!',
@@ -263,7 +279,7 @@ export class EmailService {
               <h1>🎵 Welcome to Incus Records! 🎵</h1>
             </div>
             <div class="content">
-              <h2>Hello ${username}!</h2>
+              <h2>Hello ${displayName}!</h2>
               <p>Your account has been successfully activated. Welcome to the Incus Records family!</p>
               
               <div class="features">
@@ -298,7 +314,7 @@ export class EmailService {
       text: `
         Welcome to Incus Records!
         
-        Hello ${username}!
+        Hello ${displayName}!
         
         Your account has been successfully activated. Welcome to the Incus Records family!
         
@@ -326,7 +342,7 @@ export class EmailService {
 
   async sendPasswordChangedNotification(
     email: string,
-    username: string,
+    displayName: string,
   ): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: email,
@@ -353,7 +369,7 @@ export class EmailService {
               <h1>Password Changed</h1>
             </div>
             <div class="content">
-              <h2>Hello ${username}</h2>
+              <h2>Hello ${displayName}</h2>
               
               <div class="success">
                 <strong>✅ Success:</strong> Your password has been changed successfully.
@@ -386,7 +402,7 @@ export class EmailService {
       text: `
         Password Changed - Incus Records
         
-        Hello ${username},
+        Hello ${displayName},
         
         SUCCESS: Your password has been changed successfully.
         

@@ -18,6 +18,9 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
+    // Validate password strength
+    PasswordValidationUtil.validatePasswordStrength(createUserDto.password);
+
     // Check if user already exists
     const existingUser = await this.databaseService.user.findFirst({
       where: {
@@ -251,9 +254,10 @@ export class UsersService {
 
     // Send password changed notification
     try {
+      const displayName = user.firstName || user.username;
       await this.emailService.sendPasswordChangedNotification(
         user.email,
-        user.username,
+        displayName,
       );
     } catch (error) {
       console.error('Failed to send password changed notification:', error);
@@ -289,9 +293,10 @@ export class UsersService {
 
     // Send password changed notification
     try {
+      const displayName = user.firstName || user.username;
       await this.emailService.sendPasswordChangedNotification(
         user.email,
-        user.username,
+        displayName,
       );
     } catch (error) {
       console.error('Failed to send password changed notification:', error);
@@ -320,7 +325,8 @@ export class UsersService {
 
     // Send welcome email
     try {
-      await this.emailService.sendWelcomeEmail(user.email, user.username);
+      const displayName = user.firstName || user.username;
+      await this.emailService.sendWelcomeEmail(user.email, displayName);
     } catch (error) {
       console.error('Failed to send welcome email:', error);
     }

@@ -24,13 +24,22 @@ export class AuthService {
 
   async registerUser(
     email: string,
-    username: string,
     password: string,
+    firstName?: string,
+    lastName?: string,
+    username?: string,
   ): Promise<Omit<User, 'password'>> {
+    // Validate password strength
+    PasswordValidationUtil.validatePasswordStrength(password);
+
+    // Generate username if not provided
+    const generatedUsername =
+      username || (await this.generateUsername(email, firstName, lastName));
+
     // Check if user already exists
     const existingUser = await this.databaseService.user.findFirst({
       where: {
-        OR: [{ email }, { username }],
+        OR: [{ email }, { username: generatedUsername }],
       },
     });
 
@@ -54,8 +63,10 @@ export class AuthService {
     const user = await this.databaseService.user.create({
       data: {
         email,
-        username,
+        username: generatedUsername,
         password: hashedPassword,
+        firstName,
+        lastName,
         role: 'CUSTOMER',
         isActive: true,
         emailConfirmed: false,
@@ -66,9 +77,10 @@ export class AuthService {
 
     // Send email confirmation
     try {
+      const displayName = firstName || generatedUsername;
       await this.emailService.sendEmailConfirmation(
         email,
-        username,
+        displayName,
         emailConfirmationToken,
       );
     } catch (error) {
@@ -83,12 +95,21 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<Omit<User, 'password'>> {
-    const { identifier, password } = loginDto;
+    const { identifier, email, username, password } = loginDto;
+
+    // Determine the actual identifier to use
+    const actualIdentifier = identifier || email || username;
+
+    if (!actualIdentifier) {
+      throw new BadRequestException(
+        'Email, username, or identifier is required',
+      );
+    }
 
     // Find user by email or username
     const user = await this.databaseService.user.findFirst({
       where: {
-        OR: [{ email: identifier }, { username: identifier }],
+        OR: [{ email: actualIdentifier }, { username: actualIdentifier }],
       },
     });
 
@@ -146,9 +167,10 @@ export class AuthService {
 
     // Send password reset email
     try {
+      const displayName = user.firstName || user.username;
       await this.emailService.sendPasswordResetEmail(
         user.email,
-        user.username,
+        displayName,
         resetToken,
       );
     } catch (error) {
@@ -193,9 +215,10 @@ export class AuthService {
 
     // Send password changed notification
     try {
+      const displayName = user.firstName || user.username;
       await this.emailService.sendPasswordChangedNotification(
         user.email,
-        user.username,
+        displayName,
       );
     } catch (error) {
       console.error('Failed to send password changed notification:', error);
@@ -216,5 +239,89 @@ export class AuthService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
+  }
+
+  private async generateUsername(
+    email: string,
+    firstName?: string,
+    lastName?: string,
+  ): Promise<string> {
+    // Base username from email or names
+    let baseUsername = '';
+
+    if (firstName && lastName) {
+      baseUsername = `${firstName.toLowerCase()}${lastName.toLowerCase()}`;
+    } else if (firstName) {
+      baseUsername = firstName.toLowerCase();
+    } else {
+      // Use part before @ in email
+      baseUsername = email.split('@')[0].toLowerCase();
+    }
+
+    // Remove non-alphanumeric characters and ensure minimum length
+    baseUsername = baseUsername.replace(/[^a-z0-9]/g, '');
+    if (baseUsername.length < 3) {
+      baseUsername = email
+        .split('@')[0]
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+    }
+
+    // Ensure it's still valid
+    if (baseUsername.length < 3) {
+      baseUsername = 'user';
+    }
+
+    // Check if username exists and add numbers if needed
+    let username = baseUsername;
+    let counter = 1;
+
+    while (await this.usernameExists(username)) {
+      username = `${baseUsername}${counter}`;
+      counter++;
+    }
+
+    return username;
+  }
+
+  private async usernameExists(username: string): Promise<boolean> {
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { username },
+    });
+    return !!existingUser;
+  }
+
+  async confirmEmail(token: string): Promise<string> {
+    const user = await this.databaseService.user.findFirst({
+      where: {
+        passwordResetToken: token,
+        passwordResetExpires: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid or expired confirmation token');
+    }
+
+    await this.databaseService.user.update({
+      where: { id: user.id },
+      data: {
+        emailConfirmed: true,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+      },
+    });
+
+    // Send welcome email
+    try {
+      const displayName = user.firstName || user.username;
+      await this.emailService.sendWelcomeEmail(user.email, displayName);
+    } catch (error) {
+      console.error('Failed to send welcome email:', error);
+    }
+
+    return 'Email confirmed successfully';
   }
 }

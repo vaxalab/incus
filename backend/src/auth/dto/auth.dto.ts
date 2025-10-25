@@ -1,9 +1,23 @@
-import { IsString, IsNotEmpty, IsEmail, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEmail,
+  MinLength,
+  IsOptional,
+} from 'class-validator';
 
 export class LoginDto {
   @IsString()
-  @IsNotEmpty()
-  identifier!: string; // Can be email or username
+  @IsOptional()
+  identifier?: string; // Can be email or username
+
+  @IsEmail()
+  @IsOptional()
+  email?: string; // Alternative to identifier
+
+  @IsString()
+  @IsOptional()
+  username?: string; // Alternative to identifier
 
   @IsString()
   @IsNotEmpty()
@@ -17,14 +31,22 @@ export class RegisterDto {
   email!: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MinLength(3)
-  username!: string;
+  username?: string;
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(6)
+  @MinLength(8)
   password!: string;
+
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+
+  @IsString()
+  @IsOptional()
+  lastName?: string;
 }
 
 export class ForgotPasswordDto {
@@ -40,7 +62,7 @@ export class ResetPasswordDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(6)
+  @MinLength(8)
   newPassword!: string;
 }
 
@@ -51,6 +73,6 @@ export class ChangePasswordDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(6)
+  @MinLength(8)
   newPassword!: string;
 }

@@ -7,6 +7,7 @@ import {
   Req,
   UseGuards,
   Get,
+  Logger,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { AuthService } from './auth.service';
@@ -30,6 +31,8 @@ import {
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly databaseService: DatabaseService,
@@ -39,38 +42,62 @@ export class AuthController {
   async register(@Body() registerDto: RegisterDto, @Req() req: Request) {
     const user = await this.authService.registerUser(
       registerDto.email,
-      registerDto.username,
       registerDto.password,
+      registerDto.firstName,
+      registerDto.lastName,
+      registerDto.username,
     );
 
-    // Create session with role-based expiration
-    if (req.session) {
+    // Create and save session
+    return new Promise((resolve) => {
+      // Initialize session if it doesn't exist
+      if (!req.session) {
+        this.logger.error('Session middleware not initialized');
+        return resolve({
+          message: 'Registration successful',
+          user,
+        });
+      }
+
+      // Set session data
       req.session.userId = user.id;
       req.session.cookie.maxAge = SessionUtil.calculateSessionMaxAge(user.role);
 
-      // Track session in database for analytics
-      const sessionMetadata = SessionTrackingUtil.extractSessionMetadata(
-        req,
-        user.role,
-      );
-      try {
-        await this.databaseService.session.create({
-          data: {
-            sid: req.sessionID,
-            userId: user.id,
-            ...sessionMetadata,
-          },
-        });
-      } catch (error) {
-        // Don't fail registration if session tracking fails
-        console.warn('Failed to track session during registration:', error);
-      }
-    }
+      // Save session to ensure it gets persisted
+      req.session.save(async (err) => {
+        if (err) {
+          console.error('Failed to save session:', err);
+          return resolve({
+            message: 'Registration successful',
+            user,
+          });
+        }
 
-    return {
-      message: 'Registration successful',
-      user,
-    };
+        // Track session in database for analytics
+        const sessionMetadata = SessionTrackingUtil.extractSessionMetadata(
+          req,
+          user.role,
+        );
+        try {
+          await this.databaseService.session.create({
+            data: {
+              sid: req.sessionID,
+              userId: user.id,
+              ...sessionMetadata,
+            },
+          });
+          console.log('Session created in database:', req.sessionID);
+        } catch (error) {
+          // Don't fail registration if session tracking fails
+          console.warn('Failed to track session during registration:', error);
+        }
+
+        resolve({
+          message: 'Registration successful',
+          user,
+        });
+      });
+    });
   }
 
   @Post('login')
@@ -78,34 +105,56 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto, @Req() req: Request) {
     const user = await this.authService.login(loginDto);
 
-    // Create session with role-based expiration
-    if (req.session) {
+    // Create and save session
+    return new Promise((resolve) => {
+      // Initialize session if it doesn't exist
+      if (!req.session) {
+        this.logger.error('Session middleware not initialized');
+        return resolve({
+          message: 'Login successful',
+          user,
+        });
+      }
+
+      // Set session data
       req.session.userId = user.id;
       req.session.cookie.maxAge = SessionUtil.calculateSessionMaxAge(user.role);
 
-      // Track session in database for analytics
-      const sessionMetadata = SessionTrackingUtil.extractSessionMetadata(
-        req,
-        user.role,
-      );
-      try {
-        await this.databaseService.session.create({
-          data: {
-            sid: req.sessionID,
-            userId: user.id,
-            ...sessionMetadata,
-          },
-        });
-      } catch (error) {
-        // Don't fail login if session tracking fails
-        console.warn('Failed to track session during login:', error);
-      }
-    }
+      // Save session to ensure it gets persisted
+      req.session.save(async (err) => {
+        if (err) {
+          console.error('Failed to save session:', err);
+          return resolve({
+            message: 'Login successful',
+            user,
+          });
+        }
 
-    return {
-      message: 'Login successful',
-      user,
-    };
+        // Track session in database for analytics
+        const sessionMetadata = SessionTrackingUtil.extractSessionMetadata(
+          req,
+          user.role,
+        );
+        try {
+          await this.databaseService.session.create({
+            data: {
+              sid: req.sessionID,
+              userId: user.id,
+              ...sessionMetadata,
+            },
+          });
+          console.log('Session created in database:', req.sessionID);
+        } catch (error) {
+          // Don't fail login if session tracking fails
+          console.warn('Failed to track session during login:', error);
+        }
+
+        resolve({
+          message: 'Login successful',
+          user,
+        });
+      });
+    });
   }
 
   @Post('logout')
@@ -152,6 +201,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     const message = await this.authService.resetPassword(resetPasswordDto);
+    return {
+      message,
+    };
+  }
+
+  @Post('confirm-email')
+  @HttpCode(HttpStatus.OK)
+  async confirmEmail(@Body() body: { token: string }) {
+    const message = await this.authService.confirmEmail(body.token);
     return {
       message,
     };
