@@ -128,6 +128,24 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Invalidate all existing active sessions for this user (single session per user)
+    try {
+      await this.databaseService.session.updateMany({
+        where: {
+          userId: user.id,
+          isActive: true,
+        },
+        data: {
+          isActive: false,
+          logoutAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+    } catch (error) {
+      // Don't fail login if session cleanup fails
+      console.warn('Failed to cleanup old sessions during login:', error);
+    }
+
     // Update last login timestamp would go here if we had that field
     // await this.databaseService.user.update({
     //   where: { id: user.id },
