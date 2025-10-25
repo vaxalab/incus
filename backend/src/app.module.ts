@@ -1,5 +1,6 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CacheModule } from './cache/cache.module';
@@ -8,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { EmailModule } from './email/email.module';
 import { SessionMiddleware } from './middleware/session.middleware';
+import { ApiKeyGuard } from './auth/guards/api-key.guard';
 
 @Module({
   imports: [
@@ -21,7 +23,14 @@ import { SessionMiddleware } from './middleware/session.middleware';
     EmailModule,
   ],
   controllers: [AppController],
-  providers: [AppService, SessionMiddleware],
+  providers: [
+    AppService,
+    SessionMiddleware,
+    {
+      provide: APP_GUARD,
+      useClass: ApiKeyGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
