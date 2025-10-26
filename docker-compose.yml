@@ -40,6 +40,11 @@ services:
       - incus_network
     stdin_open: true
     tty: true
+    command: >
+      sh -c "echo 'Generating Prisma Client...' &&
+             yarn prisma generate &&
+             echo 'Starting application...' &&
+             yarn start:dev"
 
   # Frontend (Next.js)
   frontend:

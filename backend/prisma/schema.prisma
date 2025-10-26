@@ -21,10 +21,12 @@ model User {
   lastLogin            DateTime?
   passwordResetToken   String?
   passwordResetExpires DateTime?
+  profileImageId       String?   @unique // Profile image foreign key
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
   // Relationships
+  profileImage     Image?            @relation("UserProfileImage", fields: [profileImageId], references: [id])
   orders           Order[]
   posts            Post[]
   sessions         Session[]
@@ -36,6 +38,7 @@ model User {
   @@index([username])
   @@index([role])
   @@index([isActive])
+  @@index([profileImageId])
   @@map("users")
 }
 
@@ -306,11 +309,12 @@ model Image {
   mimeType String?
 
   // Relations
-  releases Release[]
-  artists  Artist[]
-  products Product[]
-  postId   String?
-  post     Post?     @relation(fields: [postId], references: [id])
+  userProfile User?     @relation("UserProfileImage")
+  releases    Release[]
+  artists     Artist[]
+  products    Product[]
+  postId      String?
+  post        Post?     @relation(fields: [postId], references: [id])
 
   @@index([id])
   @@index([filename])
