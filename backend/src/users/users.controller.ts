@@ -10,7 +10,10 @@ import {
   UseGuards,
   DefaultValuePipe,
   ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { PrismaClient } from '@prisma/client';
 
 type User = NonNullable<
@@ -24,6 +27,8 @@ import { AuthGuard } from '../auth/guards/auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/user.decorator';
+import { FileValidationPipe } from '../storage/pipes/file-validation.pipe';
+import { IMAGE_UPLOAD_CONFIG } from '../storage/interfaces/upload-config.interface';
 
 @Controller('users')
 @UseGuards(AuthGuard, RolesGuard)
@@ -116,5 +121,39 @@ export class UsersController {
   @Roles('ADMIN')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
+  }
+
+  @Post('profile/image')
+  @Roles('ADMIN', 'CUSTOMER')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadProfileImage(
+    @CurrentUser() user: Omit<User, 'password'>,
+    @UploadedFile(new FileValidationPipe(IMAGE_UPLOAD_CONFIG))
+    file: Express.Multer.File,
+  ) {
+    return await this.usersService.uploadProfileImage(user.id, file);
+  }
+
+  @Delete('profile/image')
+  @Roles('ADMIN', 'CUSTOMER')
+  async removeProfileImage(@CurrentUser() user: Omit<User, 'password'>) {
+    return await this.usersService.removeProfileImage(user.id);
+  }
+
+  @Post(':id/profile/image')
+  @Roles('ADMIN')
+  @UseInterceptors(FileInterceptor('file'))
+  async adminUploadProfileImage(
+    @Param('id') id: string,
+    @UploadedFile(new FileValidationPipe(IMAGE_UPLOAD_CONFIG))
+    file: Express.Multer.File,
+  ) {
+    return await this.usersService.uploadProfileImage(id, file);
+  }
+
+  @Delete(':id/profile/image')
+  @Roles('ADMIN')
+  async adminRemoveProfileImage(@Param('id') id: string) {
+    return await this.usersService.removeProfileImage(id);
   }
 }

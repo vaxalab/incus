@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { EmailService } from '../email/email.service';
+import { StorageService } from '../storage/storage.service';
 import { PasswordValidationUtil } from '../utils/password-validation.util';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -15,6 +16,7 @@ export class UsersService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly emailService: EmailService,
+    private readonly storageService: StorageService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -378,5 +380,93 @@ export class UsersService {
     });
 
     return { message: 'User deleted successfully' };
+  }
+
+  async uploadProfileImage(userId: string, file: Express.Multer.File) {
+    const user = await this.databaseService.user.findUnique({
+      where: { id: userId },
+      include: { profileImage: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Delete existing profile image if it exists
+    if (user.profileImage) {
+      try {
+        await this.storageService.deleteFile(
+          user.profileImage.bucketName,
+          user.profileImage.key,
+        );
+        // Delete from database
+        await this.databaseService.image.delete({
+          where: { id: user.profileImage.id },
+        });
+      } catch (error) {
+        console.error('Error deleting existing profile image:', error);
+        // Continue with upload even if deletion fails
+      }
+    }
+
+    // Upload new profile image
+    const uploadResult = await this.storageService.uploadImage(file, {
+      maxWidth: 500,
+      maxHeight: 500,
+      quality: 85,
+    });
+
+    // Update user with new profile image
+    const updatedUser = await this.databaseService.user.update({
+      where: { id: userId },
+      data: {
+        profileImageId: uploadResult.id,
+      },
+      include: {
+        profileImage: true,
+      },
+    });
+
+    return updatedUser;
+  }
+
+  async removeProfileImage(userId: string) {
+    const user = await this.databaseService.user.findUnique({
+      where: { id: userId },
+      include: { profileImage: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.profileImage) {
+      throw new NotFoundException('User does not have a profile image');
+    }
+
+    // Delete image from storage
+    try {
+      await this.storageService.deleteFile(
+        user.profileImage.bucketName,
+        user.profileImage.key,
+      );
+    } catch (error) {
+      console.error('Error deleting profile image from storage:', error);
+    }
+
+    // Delete image from database
+    await this.databaseService.image.delete({
+      where: { id: user.profileImage.id },
+    });
+
+    // Update user to remove profile image reference
+    const updatedUser = await this.databaseService.user.update({
+      where: { id: userId },
+      data: {
+        profileImageId: null,
+      },
+    });
+
+    return updatedUser;
   }
 }

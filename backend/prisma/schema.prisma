@@ -194,20 +194,81 @@ model Track {
   title       String
   trackNumber Int
   duration    Int? // Duration in seconds
-  audioUrl    String? // For streaming audio
+  audioUrl    String? // For streaming audio (legacy field)
   playable    Boolean  @default(true)
+  audioFileId String? // New audio file relationship
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
   releaseId String
-  release   Release @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  release   Release    @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  audioFile AudioFile? @relation(fields: [audioFileId], references: [id])
 
   @@index([id])
   @@index([title])
   @@index([releaseId])
+  @@index([audioFileId])
   @@index([createdAt])
   @@map("tracks")
+}
+
+// Audio Files
+model AudioFile {
+  id           String   @id @default(uuid())
+  filename     String
+  originalName String
+  mimeType     String
+  filesize     Int
+  duration     Int? // Duration in seconds
+  bitrate      Int? // Bitrate in kbps
+  sampleRate   Int? // Sample rate in Hz
+  channels     Int? // Number of audio channels
+  // S3/Storage fields
+  bucketName   String
+  key          String // S3 object key
+  url          String // Public/Private URL
+  isPublic     Boolean  @default(false) // Whether file is publicly accessible
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  tracks Track[]
+
+  @@index([id])
+  @@index([filename])
+  @@index([mimeType])
+  @@index([bucketName])
+  @@index([key])
+  @@index([isPublic])
+  @@index([createdAt])
+  @@map("audio_files")
+}
+
+// Download Files (for digital products)
+model DownloadFile {
+  id           String   @id @default(uuid())
+  filename     String
+  originalName String
+  mimeType     String
+  filesize     Int
+  // S3/Storage fields
+  bucketName   String
+  key          String // S3 object key
+  url          String // Private URL (requires authentication)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  digitalDownloads DigitalDownload[]
+
+  @@index([id])
+  @@index([filename])
+  @@index([mimeType])
+  @@index([bucketName])
+  @@index([key])
+  @@index([createdAt])
+  @@map("download_files")
 }
 
 // Product Types
@@ -300,13 +361,20 @@ model ProductCategory {
 
 // Images
 model Image {
-  id       String  @id @default(uuid())
-  filename String
-  alt      String?
-  width    Int?
-  height   Int?
-  filesize Int?
-  mimeType String?
+  id           String   @id @default(uuid())
+  filename     String
+  originalName String
+  alt          String?
+  width        Int?
+  height       Int?
+  filesize     Int?
+  mimeType     String?
+  // S3/Storage fields
+  bucketName   String
+  key          String // S3 object key
+  url          String // Public URL
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
   userProfile User?     @relation("UserProfileImage")
@@ -321,6 +389,8 @@ model Image {
   @@index([mimeType])
   @@index([postId])
   @@index([filesize])
+  @@index([bucketName])
+  @@index([key])
   @@map("images")
 }
 
@@ -527,18 +597,21 @@ model DigitalDownload {
   updatedAt     DateTime @updatedAt
 
   // Relations
-  orderItemId String? // Link to specific order item
-  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id])
-  productId   String // The digital product being downloaded
-  product     Product    @relation(fields: [productId], references: [id])
-  userId      String? // Optional user (for guest purchases)
-  user        User?      @relation(fields: [userId], references: [id])
+  orderItemId    String? // Link to specific order item
+  orderItem      OrderItem?    @relation(fields: [orderItemId], references: [id])
+  productId      String // The digital product being downloaded
+  product        Product       @relation(fields: [productId], references: [id])
+  userId         String? // Optional user (for guest purchases)
+  user           User?         @relation(fields: [userId], references: [id])
+  downloadFileId String? // Link to the actual file
+  downloadFile   DownloadFile? @relation(fields: [downloadFileId], references: [id])
 
   @@index([id])
   @@index([downloadToken])
   @@index([orderItemId])
   @@index([productId])
   @@index([userId])
+  @@index([downloadFileId])
   @@index([expiresAt])
   @@index([isActive])
   @@index([isActive, expiresAt])

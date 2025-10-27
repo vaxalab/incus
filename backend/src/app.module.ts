@@ -8,6 +8,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { EmailModule } from './email/email.module';
+import { StorageModule } from './storage/storage.module';
 import { SessionMiddleware } from './middleware/session.middleware';
 import { ApiKeyGuard } from './auth/guards/api-key.guard';
 
@@ -21,6 +22,7 @@ import { ApiKeyGuard } from './auth/guards/api-key.guard';
     AuthModule,
     UsersModule,
     EmailModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [
