@@ -185,6 +185,59 @@ export class ReleasesService {
     };
   }
 
+  async findByArtist(
+    artistId: string,
+    page = 1,
+    limit = 20,
+    includeInactive = false,
+  ) {
+    const skip = (page - 1) * limit;
+
+    const where = {
+      artistId,
+      ...(includeInactive ? {} : { isActive: true }),
+    };
+
+    const [releases, total] = await Promise.all([
+      this.databaseService.release.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          bannerImage: true,
+          images: {
+            orderBy: { order: 'asc' },
+            take: 1, // Just the first image for listing
+          },
+          artist: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          _count: {
+            select: {
+              tracks: true,
+            },
+          },
+        },
+        orderBy: { releaseDate: 'desc' },
+      }),
+      this.databaseService.release.count({ where }),
+    ]);
+
+    return {
+      releases,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async findOne(id: string) {
     const release = await this.databaseService.release.findUnique({
       where: { id },

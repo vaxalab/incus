@@ -72,6 +72,25 @@ export class ReleasesController {
     return this.releasesService.findAll(page, limit, canSeeInactive);
   }
 
+  @Get('artist/:artistId')
+  @UseGuards(OptionalAuthGuard)
+  async findByArtist(
+    @Param('artistId') artistId: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('includeInactive') includeInactive?: string,
+    @CurrentUser() user?: User,
+  ) {
+    // Only admins can see inactive releases
+    const canSeeInactive = user?.role === 'ADMIN' && includeInactive === 'true';
+    return this.releasesService.findByArtist(
+      artistId,
+      page,
+      limit,
+      canSeeInactive,
+    );
+  }
+
   @Get('slug/:slug')
   @UseGuards(OptionalAuthGuard)
   async findBySlug(@Param('slug') slug: string) {
