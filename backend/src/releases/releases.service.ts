@@ -202,7 +202,17 @@ export class ReleasesService {
         },
         tracks: {
           include: {
-            audioFile: true,
+            audioFile: {
+              select: {
+                id: true,
+                filename: true,
+                originalName: true,
+                mimeType: true,
+                filesize: true,
+                duration: true,
+                url: true,
+              },
+            },
           },
           orderBy: { trackNumber: 'asc' },
         },
@@ -244,7 +254,17 @@ export class ReleasesService {
         tracks: {
           where: { playable: true },
           include: {
-            audioFile: true,
+            audioFile: {
+              select: {
+                id: true,
+                filename: true,
+                originalName: true,
+                mimeType: true,
+                filesize: true,
+                duration: true,
+                url: true,
+              },
+            },
           },
           orderBy: { trackNumber: 'asc' },
         },

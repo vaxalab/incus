@@ -14,6 +14,7 @@ import { ApiKeyGuard } from './auth/guards/api-key.guard';
 import { ArtistsModule } from './artists/artists.module';
 import { ReleasesModule } from './releases/releases.module';
 import { PostsModule } from './posts/posts.module';
+import { TracksModule } from './tracks/tracks.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { PostsModule } from './posts/posts.module';
     ArtistsModule,
     ReleasesModule,
     PostsModule,
+    TracksModule,
   ],
   controllers: [AppController],
   providers: [
