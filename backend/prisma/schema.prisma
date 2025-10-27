@@ -171,22 +171,25 @@ model Release {
   youtubeUrl       String?
   youtubeMusicUrl  String?
   soundcloudUrl    String?
+  bannerImageId    String?     @unique // Banner image foreign key
   isActive         Boolean     @default(true)
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
   // Relations
-  artistId String
-  artist   Artist    @relation(fields: [artistId], references: [id])
-  images   Image[]
-  tracks   Track[]
-  products Product[] // Release products
+  artistId    String
+  artist      Artist    @relation(fields: [artistId], references: [id])
+  bannerImage Image?    @relation("ReleaseBannerImage", fields: [bannerImageId], references: [id])
+  images      Image[]
+  tracks      Track[]
+  products    Product[] // Release products
 
   @@index([id])
   @@index([title])
   @@index([slug])
   @@index([title, slug])
   @@index([artistId])
+  @@index([bannerImageId])
   @@index([createdAt])
   @@map("releases")
 }
@@ -381,13 +384,14 @@ model Image {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  userProfile  User?     @relation("UserProfileImage")
-  artistBanner Artist?   @relation("ArtistBannerImage")
-  releases     Release[]
-  artists      Artist[]
-  products     Product[]
-  postId       String?
-  post         Post?     @relation(fields: [postId], references: [id])
+  userProfile   User?     @relation("UserProfileImage")
+  artistBanner  Artist?   @relation("ArtistBannerImage")
+  releaseBanner Release?  @relation("ReleaseBannerImage")
+  releases      Release[]
+  artists       Artist[]
+  products      Product[]
+  postId        String?
+  post          Post?     @relation(fields: [postId], references: [id])
 
   @@index([id])
   @@index([filename])

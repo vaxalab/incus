@@ -12,6 +12,7 @@ import { StorageModule } from './storage/storage.module';
 import { SessionMiddleware } from './middleware/session.middleware';
 import { ApiKeyGuard } from './auth/guards/api-key.guard';
 import { ArtistsModule } from './artists/artists.module';
+import { ReleasesModule } from './releases/releases.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ArtistsModule } from './artists/artists.module';
     EmailModule,
     StorageModule,
     ArtistsModule,
+    ReleasesModule,
   ],
   controllers: [AppController],
   providers: [
