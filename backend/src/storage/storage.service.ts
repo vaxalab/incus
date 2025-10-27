@@ -68,6 +68,7 @@ export class StorageService {
   async uploadImage(
     file: Express.Multer.File,
     options?: FileProcessingOptions,
+    folder = 'images',
   ): Promise<UploadResult> {
     // Compress image with optional resizing
     const compressionResult = await ImageCompressionUtil.compressImage(
@@ -84,7 +85,7 @@ export class StorageService {
 
     // Generate unique filename
     const filename = FileMetadataUtil.generateUniqueFilename(file.originalname);
-    const key = `images/${filename}`;
+    const key = `${folder}/${filename}`;
 
     // Upload to S3
     const bucketName = this.buckets[FileType.IMAGE];

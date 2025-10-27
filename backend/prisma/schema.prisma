@@ -129,6 +129,7 @@ model Artist {
   youtubeUrl      String?
   youtubeMusicUrl String?
   soundcloud      String?
+  bannerImageId   String?  @unique // Banner image foreign key
   isActive        Boolean  @default(true)
   addedById       String // User who added the artist
   addedBy         User     @relation(fields: [addedById], references: [id])
@@ -136,13 +137,15 @@ model Artist {
   updatedAt       DateTime @updatedAt
 
   // Relations
-  releases Release[]
-  images   Image[]
+  bannerImage Image?    @relation("ArtistBannerImage", fields: [bannerImageId], references: [id])
+  releases    Release[]
+  images      Image[]
 
   @@index([id])
   @@index([name])
   @@index([slug])
   @@index([name, slug])
+  @@index([bannerImageId])
   @@map("artists")
 }
 
@@ -369,6 +372,7 @@ model Image {
   height       Int?
   filesize     Int?
   mimeType     String?
+  order        Int?     @default(0) // Order for displaying images
   // S3/Storage fields
   bucketName   String
   key          String // S3 object key
@@ -377,12 +381,13 @@ model Image {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  userProfile User?     @relation("UserProfileImage")
-  releases    Release[]
-  artists     Artist[]
-  products    Product[]
-  postId      String?
-  post        Post?     @relation(fields: [postId], references: [id])
+  userProfile  User?     @relation("UserProfileImage")
+  artistBanner Artist?   @relation("ArtistBannerImage")
+  releases     Release[]
+  artists      Artist[]
+  products     Product[]
+  postId       String?
+  post         Post?     @relation(fields: [postId], references: [id])
 
   @@index([id])
   @@index([filename])
@@ -391,6 +396,7 @@ model Image {
   @@index([filesize])
   @@index([bucketName])
   @@index([key])
+  @@index([order])
   @@map("images")
 }
 

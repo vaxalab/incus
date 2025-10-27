@@ -11,7 +11,8 @@ import type { UploadConfigOptions } from '../interfaces/upload-config.interface'
 export class FileValidationPipe implements PipeTransform {
   constructor(private readonly config: UploadConfigOptions) {}
 
-  async transform(file: Express.Multer.File, metadata: ArgumentMetadata) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async transform(file: Express.Multer.File, _metadata: ArgumentMetadata) {
     console.log('FileValidationPipe - Received file:', {
       fieldname: file?.fieldname,
       originalname: file?.originalname,
